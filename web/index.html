@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>x-vote — open-source X voting verification</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">x-vote</span>
+    <span class="brand-sub">Open-source voting verification · no official X API</span>
+  </div>
+  <div class="topbar-right">
+    <span id="session-chip" class="session-chip">No session</span>
+    <button id="btn-demo" class="button button-light" type="button">Load synthetic demo</button>
+  </div>
+</header>
+
+<div id="global-banner" class="banner hidden" role="status" aria-live="polite"></div>
+
+<nav id="mainnav" class="mainnav hidden" aria-label="Sections">
+  <button type="button" data-section="overview" class="navlink is-active">Overview</button>
+  <button type="button" data-section="competitions" class="navlink">Competitions</button>
+  <button type="button" data-section="newcheck" class="navlink">New Check</button>
+  <button type="button" data-section="sources" class="navlink">Sources</button>
+  <button type="button" data-section="events" class="navlink">Vote Events</button>
+  <button type="button" data-section="leaderboard" class="navlink">Leaderboard</button>
+  <button type="button" data-section="agents" class="navlink">Agent Monitor</button>
+  <button type="button" data-section="review" class="navlink">Evidence Review</button>
+  <button type="button" data-section="exports" class="navlink">Exports</button>
+  <button type="button" data-section="settings" class="navlink">Settings</button>
+</nav>
+
+<main id="main">
+  <section id="welcome" class="panel welcome">
+    <div class="welcome-copy">
+      <p class="eyebrow">Collect · verify · audit</p>
+      <h1>Count X votes with evidence, not guesswork.</h1>
+      <p class="lede">x-vote observes native polls, replies, likes, reposts and other public activity
+        through open-source adapters. It keeps every countable event traceable, separates
+        anonymous aggregates from individually evidenced activity, and never invents missing data.</p>
+      <div class="welcome-actions">
+        <button id="btn-new-session" type="button" class="button button-primary">Start a check</button>
+        <button id="btn-welcome-demo" type="button" class="button">Run synthetic demo</button>
+      </div>
+      <label class="field welcome-storage"><span>Session storage</span>
+        <select id="welcome-storage">
+          <option value="auto">Automatic (memory, promote when large)</option>
+          <option value="memory">Memory only</option>
+          <option value="sqlite">Temporary SQLite checkpoint</option>
+        </select>
+      </label>
+      <ul class="welcome-points">
+        <li>No official X API, no hidden automation.</li>
+        <li>Authorized sessions only; rate limits and access controls are respected.</li>
+        <li>Temporary sessions are cleaned up on exit; exports are explicit and local.</li>
+      </ul>
+    </div>
+    <aside class="welcome-card">
+      <p class="eyebrow">What you get</p>
+      <dl>
+        <dt>Confirmed</dt><dd>Eligible events that passed deterministic checks.</dd>
+        <dt>Provisional</dt><dd>Unresolved activity, never silently promoted.</dd>
+        <dt>Aggregates</dt><dd>Source-reported poll totals, clearly labelled.</dd>
+        <dt>Coverage</dt><dd>What was collected, what failed, what is unknown.</dd>
+      </dl>
+      <p class="fineprint">Every leaderboard names its metric, denominator, sources, coverage and
+        finalization status. Mixed methods are never combined without an explicit formula.</p>
+    </aside>
+  </section>
+
+  <section id="panel-overview" class="panel hidden" aria-labelledby="overview-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Current competition</p>
+        <h1 id="overview-title">Overview</h1>
+      </div>
+      <div class="actions">
+        <button id="btn-collect" type="button" class="button button-primary">Collect now</button>
+        <button id="btn-snapshot-top" type="button" class="button">Capture snapshot</button>
+      </div>
+    </div>
+    <div id="overview-content" class="stack"></div>
+  </section>
+
+  <section id="panel-competitions" class="panel hidden" aria-labelledby="competitions-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Configuration</p>
+        <h1 id="competitions-title">Competitions</h1>
+      </div>
+      <button id="btn-goto-newcheck" type="button" class="button">New check</button>
+    </div>
+    <div id="competitions-content" class="stack"></div>
+  </section>
+
+  <section id="panel-newcheck" class="panel hidden" aria-labelledby="newcheck-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Guided setup</p>
+        <h1 id="newcheck-title">New Check</h1>
+      </div>
+      <span class="hint">Nothing is collected until you confirm the configuration.</span>
+    </div>
+    <div id="wizard" class="stack"></div>
+  </section>
+
+  <section id="panel-sources" class="panel hidden" aria-labelledby="sources-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Coverage and limitations</p>
+        <h1 id="sources-title">Sources</h1>
+      </div>
+      <button id="btn-refresh-sources" type="button" class="button">Refresh</button>
+    </div>
+    <div id="sources-content" class="stack"></div>
+  </section>
+
+  <section id="panel-events" class="panel hidden" aria-labelledby="events-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Receipts</p>
+        <h1 id="events-title">Vote Events</h1>
+      </div>
+      <button id="btn-refresh-events" type="button" class="button">Refresh</button>
+    </div>
+    <div class="toolbar">
+      <label>Search <input id="events-search" type="search" placeholder="account, text, event id"></label>
+      <label>Status
+        <select id="events-status">
+          <option value="">All statuses</option>
+          <option value="eligible">Eligible</option>
+          <option value="pending_review">Pending review</option>
+          <option value="disputed">Disputed</option>
+          <option value="ineligible">Ineligible</option>
+          <option value="eligibility_unknown">Eligibility unknown</option>
+          <option value="pending_eligibility_review">Project review</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </label>
+      <label>Method
+        <select id="events-method">
+          <option value="">All methods</option>
+          <option value="native_poll">Native poll</option>
+          <option value="reply">Reply</option>
+          <option value="like">Like</option>
+          <option value="repost">Repost</option>
+          <option value="quote">Quote</option>
+          <option value="mention">Mention</option>
+          <option value="hashtag">Hashtag</option>
+          <option value="keyword">Keyword</option>
+          <option value="manual_total">Manual total</option>
+          <option value="ocr_total">OCR total</option>
+          <option value="external_aggregate">External aggregate</option>
+        </select>
+      </label>
+      <label>Project <select id="events-project"><option value="">All projects</option></select></label>
+      <label class="checkbox"><input id="events-superseded" type="checkbox"> Include superseded</label>
+    </div>
+    <p id="events-meta" class="meta"></p>
+    <div class="scroll"><table id="events-table" class="data-table"></table></div>
+    <div class="pager">
+      <button id="events-prev" type="button" class="button">Previous</button>
+      <span id="events-page">Page 1</span>
+      <button id="events-next" type="button" class="button">Next</button>
+    </div>
+    <div id="polls-block" class="stack"></div>
+  </section>
+
+  <section id="panel-leaderboard" class="panel hidden" aria-labelledby="leaderboard-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Deterministic ranking</p>
+        <h1 id="leaderboard-title">Leaderboard</h1>
+      </div>
+      <div class="actions">
+        <button id="btn-capture-snapshot" type="button" class="button">Capture snapshot</button>
+        <button id="btn-compare-snapshots" type="button" class="button">Compare last two</button>
+      </div>
+    </div>
+    <div id="lb-views" class="viewtabs" role="tablist"></div>
+    <div class="toolbar">
+      <label>Search <input id="lb-search" type="search" placeholder="project name or ID"></label>
+      <label>Method
+        <select id="lb-method-filter"><option value="">All methods</option></select>
+      </label>
+      <label>Display order
+        <select id="lb-sort">
+          <option value="rank">Official rank</option>
+          <option value="name">Project name A–Z</option>
+        </select>
+      </label>
+    </div>
+    <div id="leaderboard-meta" class="stack"></div>
+    <div class="scroll"><table id="leaderboard-table" class="data-table leaderboard"></table></div>
+    <div id="snapshots-content" class="stack"></div>
+  </section>
+
+  <section id="panel-agents" class="panel hidden" aria-labelledby="agents-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Bounded automation</p>
+        <h1 id="agents-title">Agent Monitor</h1>
+      </div>
+      <div class="actions">
+        <button id="btn-run-agents" type="button" class="button button-primary">Run agents</button>
+        <button id="btn-pause-agents" type="button" class="button">Pause new work</button>
+        <button id="btn-cancel-agents" type="button" class="button">Cancel</button>
+      </div>
+    </div>
+    <div id="agents-content" class="stack"></div>
+  </section>
+
+  <section id="panel-review" class="panel hidden" aria-labelledby="review-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Human decisions</p>
+        <h1 id="review-title">Evidence Review</h1>
+      </div>
+      <button id="btn-refresh-review" type="button" class="button">Refresh</button>
+    </div>
+    <div id="review-content" class="stack"></div>
+  </section>
+
+  <section id="panel-exports" class="panel hidden" aria-labelledby="exports-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Local files only</p>
+        <h1 id="exports-title">Exports</h1>
+      </div>
+    </div>
+    <div class="export-grid">
+      <div class="card">
+        <h2>Build an export</h2>
+        <label>Dataset
+          <select id="export-kind">
+            <option value="leaderboard">Confirmed leaderboard</option>
+            <option value="provisional">Provisional leaderboard</option>
+            <option value="raw">Raw activity summary</option>
+            <option value="methods">Method breakdown</option>
+            <option value="events">Eligible events</option>
+            <option value="rejected">Rejected / pending summary</option>
+            <option value="coverage">Coverage report</option>
+            <option value="snapshots">Ranking history</option>
+            <option value="audit">Audit trail</option>
+            <option value="agents">Agent summary</option>
+            <option value="config">Configuration</option>
+          </select>
+        </label>
+        <label>Format
+          <select id="export-format">
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+          </select>
+        </label>
+        <div id="export-fields" class="fieldlist"></div>
+        <label class="checkbox"><input id="export-sensitive" type="checkbox"> Include account-level / raw evidence fields</label>
+        <label class="checkbox"><input id="export-confirm" type="checkbox"> I confirm this export may contain sensitive records and will store it securely.</label>
+        <button id="export-button" type="button" class="button button-primary">Export locally</button>
+        <p class="fineprint">Exports go to the local export directory, are never uploaded, and are not touched by session cleanup. Review them before sharing.</p>
+      </div>
+      <div class="card">
+        <h2>Export history</h2>
+        <div id="export-result" class="stack"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="panel-settings" class="panel hidden" aria-labelledby="settings-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Adapters, storage, cleanup</p>
+        <h1 id="settings-title">Settings</h1>
+      </div>
+      <button id="btn-cleanup" type="button" class="button button-danger">Clean up all sessions</button>
+    </div>
+    <div id="settings-content" class="stack"></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>x-vote is an independent open-source tool. It is not affiliated with X. Synthetic demo data
+    is always labelled; never present it as live results. Verify licenses, terms and authorized
+    access before collecting.</p>
+</footer>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<dialog id="confirm-dialog">
+  <form method="dialog">
+    <h2 id="confirm-title">Confirm</h2>
+    <p id="confirm-message"></p>
+    <label id="confirm-input-wrap" class="hidden">Type the confirmation word
+      <input id="confirm-input" type="text" autocomplete="off">
+    </label>
+    <div class="dialog-actions">
+      <button value="cancel" class="button" type="submit">Cancel</button>
+      <button id="confirm-ok" value="ok" class="button button-danger" type="submit">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/app.js"></script>
+</body>
+</html>

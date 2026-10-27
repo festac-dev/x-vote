@@ -1,0 +1,16 @@
+.env
+*.pyc
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.sqlite3
+.x-vote/
+.env.*
+!.env.example
+node_modules/
+.git-backup/
+.git_backup/
+*.pem
+*.key
+*.log

@@ -1,0 +1,59 @@
+# x-vote acquisition configuration.
+# No credentials belong in this file. Credentials are read from environment variables only.
+
+acquisition:
+  # Operator-controlled tier preference. Adapters without required credentials or
+  # capabilities are skipped, never enabled implicitly.
+  preference_order: [x-tweet-fetcher, x-cli, twscrape, Scweet]
+  x_tweet_fetcher:
+    enabled: true
+    # A self-hosted Nitter instance is required for replies. Public instances are
+    # intentionally unsupported. Must be explicitly configured and reachable.
+    nitter_base: "http://127.0.0.1:8788"
+    request_timeout_seconds: 15
+    max_response_bytes: 2097152
+  x_cli:
+    enabled: true
+    binary: "x"
+    session_cookie_env: "XCLI_SESSION_COOKIE"
+    timeout_seconds: 30
+  twscrape:
+    enabled: true
+    accounts_db: "${SESSION_DIR}/twscrape_accounts.db"
+    account_source_env: "TWSCRAPE_ACCOUNTS"
+  scweet:
+    enabled: false
+    auth_token_env: "SCWEET_AUTH_TOKEN"
+
+collection:
+  max_concurrency: 3
+  per_task_timeout_seconds: 45
+  retry_limit: 2
+  max_events_in_memory: 2000
+
+agents:
+  max_concurrent_tasks: 3
+  max_depth: 3
+  # "none" keeps the system fully deterministic. "local" and "remote" require the
+  # operator to set an endpoint (and a key for remote) plus explicit consent.
+  ai_mode: "none"
+  ai_endpoint_env: "XVOTE_AI_ENDPOINT"
+  ai_key_env: "XVOTE_AI_KEY"
+  ai_consent_env: "XVOTE_AI_CONSENT"
+  ai_model: "local-model"
+  # Optional provider-specific header/scheme for the remote key; the key itself
+  # always comes from the environment. Example: "X-API-Key".
+  ai_auth_header: "Authorization"
+  ai_auth_prefix: ""
+
+compliance:
+  # These controls are invariants, not optional features. An open-source library
+  # does not make every acquisition method permitted.
+  authorized_sessions_only: true
+  no_captcha_or_auth_bypass: true
+  respect_rate_limits: true
+  # Live acquisition additionally requires an explicit operator acknowledgement.
+  # Fixture and manual imports do not. Set this environment variable to "yes"
+  # only when you have authorized access and accept the applicable terms.
+  authorized_use_env: "XVOTE_AUTHORIZED_USE_ACK"
+  require_authorized_use_ack: true
